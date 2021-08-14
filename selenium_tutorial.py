@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+import pandas as pd
 import time
 
 SCROLL_PAUSE_TIME = 0.1
@@ -66,3 +67,12 @@ for league in leagues:
                     match_odds_list.append("1.00")
             
             x12.append(match_odds_list)
+
+driver.quit()
+
+#Store lists in dictionary
+dict_betting = {"Teams": teams, "1x2": x12}
+
+#Push data in dataframe
+df_betting = pd.DataFrame.from_dict(dict_betting)
+print(df_betting)
