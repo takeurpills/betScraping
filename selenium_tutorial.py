@@ -55,16 +55,14 @@ for league in leagues:
             match_info_list = match_info_raw.replace("\n"," | ").split(" | ")
             teams.append(match_info_list[3])
 
-            match_odds_parents = match.find_elements_by_xpath('.//a[@data-atid="n1-bet-box"]')
+            match_odds_parents = match.find_elements_by_xpath('.//*[contains(@class, "bet-box-simple")]')
             match_odds_list = []
             odds = ""
             for match_odds in match_odds_parents:                
-                odds = match_odds.find_element_by_xpath('.//span[@class="text-extra-bold"]').text
-                if len(odds) > 1:
-                    match_odds_list.append(odds)
+                odds = match_odds.find_elements_by_xpath('.//span[@class="text-extra-bold"]')
+                if len(odds) > 0:
+                    match_odds_list.append(odds[0].text)
                 else:
                     match_odds_list.append("1.00")
             
             x12.append(match_odds_list)
-
-print(x12)
