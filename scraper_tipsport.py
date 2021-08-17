@@ -6,7 +6,7 @@ import time
 SCROLL_PAUSE_TIME = 0.1
 LOAD_PAUSE_TIME = 1
 
-web = 'https://www.nike.sk/tipovanie/futbal?dnes'
+web = 'https://www.tipsport.sk/kurzy/futbal-16?timeFilter=form.period.today&limit=999'
 path = 'D:/chromedriver/chromedriver'
 
 # open chrome and load the website
@@ -21,58 +21,41 @@ time.sleep(LOAD_PAUSE_TIME)
 teams = []
 x12 = [] #3-way score X 1 2
 
-# turn off live odds
-filter_button = driver.find_element_by_xpath('//div[contains(@data-atid, "time-filter")]')
-filter_button.click()
-time.sleep(LOAD_PAUSE_TIME)
+# select all standard matches, excluding special events and promotions
+matches = driver.find_elements_by_xpath('//div[@class="o-matchRow"]')
 
-live_checkbox = driver.find_element_by_xpath('//span[contains(@class, "content-filter") and contains(text(), "Live")]')
-live_checkbox.click()
-time.sleep(LOAD_PAUSE_TIME)
+# loop through all leagues, filter for only classic 1X2 matches and extract data match by match
+for match in matches:
+    is_five_way_bet = match.find_elements_by_xpath('.//div[contains(@class, "countOpp5")]') #select only 1x2 type matches
+    if len(is_five_way_bet) > 0:
+        
+        #extract team names
+        match_teams_parent = match.find_element_by_xpath('.//span[contains(@class, "o-matchRow__matchName")]')
+        match_teams = match_teams_parent.find_element_by_xpath('./span').text
 
-scroll_context_selector = driver.find_element_by_xpath('//a[@title="Zápas"][@class="active"]')
+        teams.append(match_teams)
 
-# find random text on bottom of page
-end_of_page = ""
-while (len(end_of_page) < 1):
-    scroll_context_selector.send_keys(Keys.END)
-    end_of_page = driver.find_elements_by_xpath("//*[contains(text(), 'Prejsť na mobilnú verziu')]")
-    time.sleep(SCROLL_PAUSE_TIME)
+        # extract match odds
+        match_odds_parent = match.find_element_by_xpath('.//div[contains(@class, "countOpp5")]')
+        match_odds = match_odds_parent.find_elements_by_xpath('.//div[contains(@class, "btnRate")]')
+        match_odds_list = []
+        
+        for odds in match_odds:
+            if len(odds.text) > 1:
+                match_odds_list.append(odds.text)
+            else:
+                match_odds_list.append("1.00")
 
-#select all standard matches, excluding superchance and other special promotions
-leagues = driver.find_elements_by_xpath('//*[contains(@data-atid, "n1-league-box")]')
-
-#loop through all leagues, filter for only classic 1X2 matches and extract data match by match
-for league in leagues:
-    if league.find_element_by_xpath('.//div[@class="content-box-bets-subtitle no-wrap bet"]').text == "ZÁPAS":
-        matches_parent = league.find_element_by_xpath('../../..')
-        matches = league.find_elements_by_xpath('.//div[@class="flex bet-view-prematch-row"]')
-
-        for match in matches:
-            match_info_raw = match.get_attribute("title")
-            match_info_list = match_info_raw.replace("\n"," | ").split(" | ")
-            teams.append(match_info_list[3])
-
-            match_odds_parents = match.find_elements_by_xpath('.//*[contains(@class, "bet-box-simple")]')
-            match_odds_list = []
-            odds = ""
-            for match_odds in match_odds_parents:                
-                odds = match_odds.find_elements_by_xpath('.//span[@class="text-extra-bold"]')
-                if len(odds) > 0:
-                    match_odds_list.append(odds[0].text)
-                else:
-                    match_odds_list.append("1.00")
-            
-            x12.append(match_odds_list)
+        x12.append(match_odds_list)
 
 driver.quit()
 
-#Store lists in dictionary
+# Store lists in dictionary
 dict_betting = {"Teams": teams, "1x2": x12}
 
-#Push data in dataframe
+# Push data in dataframe
 df_betting = pd.DataFrame.from_dict(dict_betting)
 
 #PRINT
-df_betting.to_csv("nike.csv")
+#df_betting.to_csv("tipsport.csv")
 print(df_betting.head(10))
